@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -26,6 +22,7 @@ import com.baidu.palo.common.Config;
 import com.baidu.palo.common.InternalException;
 import com.baidu.palo.common.Status;
 import com.baidu.palo.load.BrokerFileGroup;
+import com.baidu.palo.load.LoadJob;
 import com.baidu.palo.qe.Coordinator;
 import com.baidu.palo.qe.QeProcessor;
 import com.baidu.palo.thrift.TQueryType;
@@ -59,6 +56,7 @@ public class PullLoadTask {
     private Map<String, Long> fileMap;
     private String trackingUrl;
     private Map<String, String> counters;
+    private final long execMemLimit;
 
     // Runtime variables
     private enum State {
@@ -78,7 +76,7 @@ public class PullLoadTask {
             long jobId, int taskId,
             Database db, OlapTable table,
             BrokerDesc brokerDesc, List<BrokerFileGroup> fileGroups,
-            long jobDeadlineMs) {
+            long jobDeadlineMs, long execMemLimit) {
         this.jobId = jobId;
         this.taskId = taskId;
         this.db = db;
@@ -86,6 +84,7 @@ public class PullLoadTask {
         this.brokerDesc = brokerDesc;
         this.fileGroups = fileGroups;
         this.jobDeadlineMs = jobDeadlineMs;
+        this.execMemLimit = execMemLimit;
     }
 
     public void init() throws InternalException {
@@ -121,7 +120,7 @@ public class PullLoadTask {
     }
 
     public Status getExecuteStatus() {
-        return null;
+        return executeStatus;
     }
 
     public synchronized void onCancelled() {
@@ -205,6 +204,7 @@ public class PullLoadTask {
             curCoordinator = new Coordinator(executeId, planner.getDescTable(),
                     planner.getFragments(), planner.getScanNodes());
             curCoordinator.setQueryType(TQueryType.LOAD);
+            curCoordinator.setExecMemoryLimit(execMemLimit);
         }
 
         boolean needUnregister = false;

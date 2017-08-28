@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -225,7 +221,7 @@ public abstract class BaseAction implements IAction {
     }
 
     public static class AuthorizationInfo {
-        public String user;
+        public String fullUserName;
         public String password;
         public String cluster;
     }
@@ -250,13 +246,14 @@ public abstract class BaseAction implements IAction {
             // Note that password may contain colon, so can not simply use a
             // colon to split.
             int index = authString.indexOf(":");
-            authInfo.user = authString.substring(0, index);
-            final String[] elements = authInfo.user.split("@");
+            authInfo.fullUserName = authString.substring(0, index);
+            final String[] elements = authInfo.fullUserName.split("@");
             if (elements != null && elements.length < 2) {
-                authInfo.user = ClusterNamespace.getUserFullName(SystemInfoService.DEFAULT_CLUSTER, authInfo.user);
+                authInfo.fullUserName = ClusterNamespace.getUserFullName(SystemInfoService.DEFAULT_CLUSTER,
+                        authInfo.fullUserName);
                 authInfo.cluster = SystemInfoService.DEFAULT_CLUSTER;
             } else if (elements != null && elements.length == 2) {
-                authInfo.user = ClusterNamespace.getUserFullName(elements[1], elements[0]);
+                authInfo.fullUserName = ClusterNamespace.getUserFullName(elements[1], elements[0]);
                 authInfo.cluster = elements[1];
             }
             authInfo.password = authString.substring(index + 1);
@@ -276,10 +273,10 @@ public abstract class BaseAction implements IAction {
         if (!parseAuth(request, authInfo)) {
             throw new UnauthorizedException("Need auth information.");
         }
-        byte[] hashedPasswd = catalog.getUserMgr().getPassword(authInfo.user);
+        byte[] hashedPasswd = catalog.getUserMgr().getPassword(authInfo.fullUserName);
         if (hashedPasswd == null) {
             // No such user
-            throw new DdlException("No such user(" + authInfo.user + ")");
+            throw new DdlException("No such user(" + authInfo.fullUserName + ")");
         }
         if (!MysqlPassword.checkPlainPass(hashedPasswd, authInfo.password)) {
             throw new DdlException("Password error");
@@ -289,21 +286,19 @@ public abstract class BaseAction implements IAction {
 
     protected void checkAdmin(BaseRequest request) throws DdlException {
         final AuthorizationInfo authInfo = checkAndGetUser(request);
-        if (!catalog.getUserMgr().isAdmin(authInfo.user)) {
+        if (!catalog.getUserMgr().isAdmin(authInfo.fullUserName)) {
             throw new DdlException("Administrator needed");
         }
     }
 
-    protected void checkReadPriv(BaseRequest request, String db) throws DdlException {
-        final AuthorizationInfo authInfo = checkAndGetUser(request);
-        if (!catalog.getUserMgr().checkAccess(authInfo.user, db, AccessPrivilege.READ_ONLY)) {
+    protected void checkReadPriv(String fullUserName, String fullDbName) throws DdlException {
+        if (!catalog.getUserMgr().checkAccess(fullUserName, fullDbName, AccessPrivilege.READ_ONLY)) {
             throw new DdlException("Read Privilege needed");
         }
     }
 
-    protected void checkWritePriv(BaseRequest request, String db) throws DdlException {
-        final AuthorizationInfo authInfo = checkAndGetUser(request);
-        if (!catalog.getUserMgr().checkAccess(authInfo.user, db, AccessPrivilege.READ_WRITE)) {
+    protected void checkWritePriv(String fullUserName, String fullDbName) throws DdlException {
+        if (!catalog.getUserMgr().checkAccess(fullUserName, fullDbName, AccessPrivilege.READ_WRITE)) {
             throw new DdlException("Write Privilege needed");
         }
     }

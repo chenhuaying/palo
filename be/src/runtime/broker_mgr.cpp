@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -24,6 +20,7 @@
 #include "common/config.h"
 #include "gen_cpp/PaloBrokerService_types.h"
 #include "gen_cpp/TPaloBrokerService.h"
+#include "service/backend_options.h"
 #include "runtime/exec_env.h"
 #include "runtime/client_cache.h"
 #include "util/thrift_util.h"
@@ -41,7 +38,7 @@ BrokerMgr::~BrokerMgr() {
 
 void BrokerMgr::init() {
     std::stringstream ss;
-    ss << *_exec_env->local_ip() << ":" << config::be_port;
+    ss << BackendOptions::get_localhost() << ":" << config::be_port;
     _client_id = ss.str();
 }
 

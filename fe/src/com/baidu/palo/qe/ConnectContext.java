@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -23,6 +19,7 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 
 import com.baidu.palo.catalog.Catalog;
+import com.baidu.palo.cluster.ClusterNamespace;
 import com.baidu.palo.mysql.MysqlCapability;
 import com.baidu.palo.mysql.MysqlChannel;
 import com.baidu.palo.mysql.MysqlCommand;
@@ -317,10 +314,10 @@ public class ConnectContext {
         public List<String>  toRow(long nowMs) {
             List<String> row = Lists.newArrayList();
             row.add("" + connectionId);
-            row.add(user);
+            row.add(ClusterNamespace.getDbNameFromFullName(user));
             row.add(mysqlChannel.getRemote());
             row.add(clusterName);
-            row.add(currentDb);
+            row.add(ClusterNamespace.getDbNameFromFullName(currentDb));
             row.add(command.toString());
             row.add("" + (nowMs - startTime) / 1000);
             row.add("");

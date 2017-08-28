@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -43,6 +39,7 @@
 #include "http/http_channel.h"
 #include "http/http_parser.h"
 #include "olap/file_helper.h"
+#include "service/backend_options.h"
 #include "util/url_coding.h"
 #include "util/file_utils.h"
 #include "runtime/exec_env.h"
@@ -332,7 +329,7 @@ Status MiniLoadAction::load(
         }
         req.__set_properties(params);
         req.files.push_back(file_path);
-        req.backend.__set_hostname(*_exec_env->local_ip());
+        req.backend.__set_hostname(BackendOptions::get_localhost());
         req.backend.__set_port(config::be_port);
 
         struct timeval tv;

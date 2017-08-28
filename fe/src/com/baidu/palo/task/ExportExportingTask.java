@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -35,6 +31,7 @@ import com.baidu.palo.load.ExportFailMsg;
 import com.baidu.palo.load.ExportJob;
 import com.baidu.palo.qe.Coordinator;
 import com.baidu.palo.qe.QeProcessor;
+import com.baidu.palo.service.FrontendOptions;
 import com.baidu.palo.system.Backend;
 import com.baidu.palo.thrift.TAgentResult;
 import com.baidu.palo.thrift.TBrokerOperationStatus;
@@ -282,13 +279,8 @@ public class ExportExportingTask extends MasterTask {
     private Status moveTmpFiles() {
         BrokerMgr.BrokerAddress brokerAddress = null;
         try {
-            String localIp = "";
-            try {
-                localIp = InetAddress.getLocalHost().getHostAddress();
-            } catch (UnknownHostException e) {
-                // getBroker will deal
-            }
-            brokerAddress = Catalog.getInstance().getBrokerMgr().getBroker(job.getBrokerDesc().getName(), localIp);
+            String localIP = FrontendOptions.getLocalHostAddress();
+            brokerAddress = Catalog.getInstance().getBrokerMgr().getBroker(job.getBrokerDesc().getName(), localIP);
         } catch (AnalysisException e) {
             String failMsg = "Broker rename failed. msg=" + e.getMessage();
             LOG.warn(failMsg);

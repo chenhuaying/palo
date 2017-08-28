@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -66,7 +62,8 @@ public class LoadJob implements Writable {
 
     private static final int DEFAULT_TIMEOUT_S = 0;
     private static final double DEFAULT_MAX_FILTER_RATIO = 0;
-    
+    private static final long DEFAULT_EXEC_MEM_LIMIT = 2147483648L; // 2GB
+
     private long id;
     private long dbId;
     private String label;
@@ -107,6 +104,8 @@ public class LoadJob implements Writable {
     
     private TPriority priority;
 
+    private long execMemLimit;
+
     public LoadJob() {
         this("");
     }
@@ -141,6 +140,7 @@ public class LoadJob implements Writable {
         this.replicaPersistInfos = Maps.newHashMap();
         this.resourceInfo = null;
         this.priority = TPriority.NORMAL;
+        this.execMemLimit = DEFAULT_EXEC_MEM_LIMIT;
     }
     
     public long getId() {
@@ -278,6 +278,10 @@ public class LoadJob implements Writable {
     public PullLoadSourceInfo getPullLoadSourceInfo() {
         return pullLoadSourceInfo;
     }
+
+    public void setExecMemLimit(long execMemLimit) { this.execMemLimit = execMemLimit; }
+
+    public long getExecMemLimit() { return execMemLimit; }
 
     public void setEtlJobType(EtlJobType etlJobType) {
         this.etlJobType = etlJobType;
@@ -609,6 +613,8 @@ public class LoadJob implements Writable {
             out.writeBoolean(true);
             pullLoadSourceInfo.write(out);
         }
+
+        out.writeLong(execMemLimit);
     }
 
     public void readFields(DataInput in) throws IOException {
@@ -716,6 +722,10 @@ public class LoadJob implements Writable {
             if (in.readBoolean()) {
                 this.pullLoadSourceInfo = PullLoadSourceInfo.read(in);
             }
+        }
+
+        if (version >= FeMetaVersion.VERSION_34) {
+            this.execMemLimit = in.readLong();
         }
     }
     

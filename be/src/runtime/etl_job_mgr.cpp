@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -24,6 +20,7 @@
 
 #include "gen_cpp/Status_types.h"
 #include "gen_cpp/Types_types.h"
+#include "service/backend_options.h"
 #include "util/debug_util.h"
 #include "runtime/exec_env.h"
 #include "runtime/plan_fragment_executor.h"
@@ -41,7 +38,7 @@ namespace palo {
 
 std::string EtlJobMgr::to_http_path(const std::string& file_name) {
     std::stringstream url;
-    url << "http://" << *_exec_env->local_ip() << ":" << config::webserver_port
+    url << "http://" << BackendOptions::get_localhost() << ":" << config::webserver_port
         << "/api/_download_load?file=" << file_name;
     return url.str();
 }

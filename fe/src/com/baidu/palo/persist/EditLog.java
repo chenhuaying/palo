@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -520,6 +516,11 @@ public class EditLog {
                     catalog.getLoadInstance().setLoadErrorHubInfo(param);
                     break;
                 }
+                case OperationType.OP_UPDATE_CLUSTER_AND_BACKENDS: {
+                    final BackendIdsUpdateInfo info = (UpdateIdsUpdateInfo) journal.getData();
+                    catalog.replayUpdateClusterAndBackends(info);
+                    break;
+                }
                 default: {
                     IOException e = new IOException();
                     LOG.error("UNKNOWN Operation Type {}", opCode, e);
@@ -892,4 +893,9 @@ public class EditLog {
         ExportJob.StateTransfer transfer = new ExportJob.StateTransfer(jobId, newState);
         logEdit(OperationType.OP_EXPORT_UPDATE_STATE, transfer);
     }
+
+    public void logUpdateClusterAndBackendState(BackendIdsUpdateInfo info) {
+        logEdit(OperationType.OP_UPDATE_CLUSTER_AND_BACKENDS, info);
+    }
+    
 }

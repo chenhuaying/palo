@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -47,12 +43,12 @@ import com.baidu.palo.catalog.TabletMeta;
 import com.baidu.palo.clone.Clone;
 import com.baidu.palo.clone.CloneJob.JobPriority;
 import com.baidu.palo.cluster.Cluster;
+import com.baidu.palo.persist.BackendIdsUpdateInfo;
 import com.baidu.palo.common.Config;
 import com.baidu.palo.common.DdlException;
 import com.baidu.palo.common.FeMetaVersion;
 import com.baidu.palo.common.MetaNotFoundException;
 import com.baidu.palo.common.io.Text;
-import com.baidu.palo.persist.ClusterInfo;
 import com.baidu.palo.system.Backend;
 import com.baidu.palo.system.Backend.BackendState;
 import com.baidu.palo.system.SystemInfoService;
@@ -163,7 +159,12 @@ public class DecommissionBackendJob extends AlterJob {
         final Map<String, Integer> clusterAvailBeMap = Maps.newHashMap();
         for (String cluster : clusterBackendsMap.keySet()) {
             final Map<Long, Backend> backends = clusterBackendsMap.get(cluster);
-            int aliveBackendNum = clusterInfo.getClusterBackends(cluster, true).size();
+            final List<Backend> clusterAllLiveBackends = clusterInfo.getClusterBackends(cluster, true);
+            if (clusterAllLiveBackends == null) {
+                LOG.warn("does not belong to any cluster.");
+                return true;
+            }   
+            int aliveBackendNum = clusterAllLiveBackends.size();
             int availableBackendNum = aliveBackendNum - backends.keySet().size();
             if (availableBackendNum <= 0) {
                 // do nothing, just log
@@ -262,6 +263,15 @@ public class DecommissionBackendJob extends AlterJob {
                             continue;
                         }
 
+  
+                        // exclude backend in same hosts with the other replica
+                        Set<String> hosts = Sets.newHashSet();
+                        for (Replica replica : tablet.getReplicas()) {
+                            if (replica.getBackendId() != backendId) {
+                                hosts.add(clusterInfo.getBackend(replica.getBackendId()).getHost());
+                            }   
+                        } 
+
                         // choose dest backend
                         long destBackendId = -1L;
                         int num = 0;
@@ -272,7 +282,7 @@ public class DecommissionBackendJob extends AlterJob {
                                 return true;
                             }
 
-                            if (tablet.getReplicaByBackendId(destBackendIds.get(0)) != null) {
+                            if (hosts.contains(clusterInfo.getBackend(destBackendIds.get(0)).getHost())) {
                                 // replica can not in same backend
                                 continue;
                             }
@@ -468,23 +478,19 @@ public class DecommissionBackendJob extends AlterJob {
                 // Shrinking capacity in cluser
                 if (decomissionType == DecomissionType.ClusterDecomission) {
                     for (String clusterName : clusterBackendsMap.keySet()) {
-                        final Map<Long, Backend> map = clusterBackendsMap.get(clusterName);
+                        final Map<Long, Backend> idToBackend = clusterBackendsMap.get(clusterName);
                         final Cluster cluster = Catalog.getInstance().getCluster(clusterName);
-                        final List<Long> removeIds = Lists.newArrayList();
-                        for (long id : map.keySet()) {
-                            final Backend backend = map.get(id);
-                            backend.setOwnerClusterName("");
+                        List<Long> backendList = Lists.newArrayList();
+                        for (long id : idToBackend.keySet()) {
+                            final Backend backend = idToBackend.get(id);
+                            backend.clearClusterName();
                             backend.setBackendState(BackendState.free);
                             backend.setDecommissioned(false);
+                            backendList.add(id);
                             cluster.removeBackend(id);
-                            Catalog.getInstance().getEditLog().logBackendStateChange(backend);
-                            removeIds.add(id);
                         }
-                        cluster.removeBackends(removeIds);
-                        ClusterInfo info = new ClusterInfo();
-                        info.setClusterName(cluster.getName());
-                        info.setBackendIdList(cluster.getBackendIdList());
-                        Catalog.getInstance().getEditLog().logUpdateCluster(info);
+                        BackendIdsUpdateInfo updateInfo = new BackendIdsUpdateInfo(backendList);
+                        Catalog.getInstance().getEditLog().logUpdateClusterAndBackendState(updateInfo);
                     }
                 }
             }
@@ -566,6 +572,10 @@ public class DecommissionBackendJob extends AlterJob {
             }
             clusterBackendsMap.put(SystemInfoService.DEFAULT_CLUSTER, backends);
         }
+        
+        if (Catalog.getCurrentCatalogJournalVersion() >= FeMetaVersion.VERSION_33) {
+            decomissionType = DecomissionType.valueOf(Text.readString(in));
+        }
     }
 
     @Override
@@ -581,6 +591,7 @@ public class DecommissionBackendJob extends AlterJob {
                 out.writeLong(id);
             }
         }
+        Text.writeString(out, decomissionType.toString());
     }
 
     public static DecommissionBackendJob read(DataInput in) throws IOException {

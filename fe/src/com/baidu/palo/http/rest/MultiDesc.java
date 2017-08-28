@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -19,18 +15,19 @@
 
 package com.baidu.palo.http.rest;
 
+import java.util.List;
+
+import com.baidu.palo.cluster.ClusterNamespace;
 import com.baidu.palo.common.DdlException;
 import com.baidu.palo.http.ActionController;
 import com.baidu.palo.http.BaseRequest;
 import com.baidu.palo.http.BaseResponse;
 import com.baidu.palo.http.IllegalArgException;
 import com.baidu.palo.service.ExecuteEnv;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import io.netty.handler.codec.http.HttpMethod;
 
-import java.util.List;
+import io.netty.handler.codec.http.HttpMethod;
 
 // List all labels of one multi-load
 public class MultiDesc extends RestBaseAction {
@@ -60,7 +57,11 @@ public class MultiDesc extends RestBaseAction {
         if (Strings.isNullOrEmpty(label)) {
             throw new DdlException("No label selected");
         }
-        checkReadPriv(request, db);
+        AuthorizationInfo authInfo = getAuthorizationInfo(request);
+        String fullDbName = ClusterNamespace.getDbFullName(authInfo.cluster, db);
+
+        checkReadPriv(authInfo.fullUserName, fullDbName);
+
         if (redirectToMaster(request, response)) {
             return;
         }

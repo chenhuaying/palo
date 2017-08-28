@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -42,6 +38,7 @@
 #include "olap/utils.h"
 #include "common/resource_tls.h"
 #include "agent/cgroups_mgr.h"
+#include "service/backend_options.h"
 
 using std::deque;
 using std::list;
@@ -73,7 +70,7 @@ TaskWorkerPool::TaskWorkerPool(
     _agent_utils = new AgentUtils();
     _master_client = new MasterServerClient(_master_info, &_master_service_client_cache);
     _command_executor = new CommandExecutor();
-    _backend.__set_host(_agent_utils->get_local_ip());
+    _backend.__set_host(BackendOptions::get_localhost());
     _backend.__set_be_port(config::be_port);
     _backend.__set_http_port(config::webserver_port);
 }

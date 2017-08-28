@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -54,7 +50,7 @@ public class ClusterNamespace {
             return false;
         }
         final String[] ele = str.split(CLUSTER_DELIMITER);
-        return (ele.length > 1) ? false : true;
+        return (ele.length > 1) ? true : false;
     }
 
     private static String linkString(String str1, String str2) {
@@ -76,8 +72,8 @@ public class ClusterNamespace {
      * @return
      */
     public static String getDbNameFromFullName(String db) {
-        if (checkName(db)) {
-            return null;
+        if (!checkName(db)) {
+            return db;
         }
         return extract(db, 1);
     }
@@ -89,8 +85,8 @@ public class ClusterNamespace {
      * @return
      */
     public static String getUsrNameFromFullName(String usr) {
-        if (checkName(usr)) {
-            return null;
+        if (!checkName(usr)) {
+            return usr;
         }
         return extract(usr, 1);
     }
@@ -102,7 +98,7 @@ public class ClusterNamespace {
      * @return
      */
     public static String getClusterNameFromFullName(String str) {
-        if (checkName(str)) {
+        if (!checkName(str)) {
             return null;
         }
         return extract(str, 0);

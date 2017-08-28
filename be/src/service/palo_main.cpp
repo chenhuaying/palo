@@ -1,12 +1,8 @@
 // Copyright (c) 2017, Baidu.com, Inc. All Rights Reserved
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -44,6 +40,7 @@
 #include "agent/topic_subscriber.h"
 #include "util/palo_metrics.h"
 #include "olap/olap_main.h"
+#include "service/backend_options.h"
 #include "service/backend_service.h"
 #include <gperftools/profiler.h>
 #include "common/resource_tls.h"
@@ -107,6 +104,7 @@ int main(int argc, char** argv) {
     palo::init_daemon(argc, argv);
 
     palo::ResourceTls::init();
+    palo::BackendOptions::init();
 
     // initialize storage
     if (0 != palo::olap_main(argc, argv)) {
@@ -119,6 +117,7 @@ int main(int argc, char** argv) {
     palo::ExecEnv exec_env;
     palo::FrontendHelper::setup(&exec_env);
     palo::ThriftServer* be_server = nullptr;
+
     EXIT_IF_ERROR(palo::BackendService::create_service(
             &exec_env, 
             palo::config::be_port, 
